@@ -1,0 +1,65 @@
+Backend Directory Structure
+===========================
+
+backend/
+│
+├── Configuration Files
+│   ├── .env.example              # Environment variables template
+│   ├── .gitignore               # Git ignore patterns
+│   ├── requirements.txt         # Python dependencies (pip)
+│   └── pyproject.toml          # Modern Python project config
+│
+├── Core Application
+│   ├── main.py                  # FastAPI app entry point
+│   └── config.py               # Settings and configuration
+│
+├── Data Models (models/)
+│   ├── __init__.py
+│   ├── base.py                 # Common response models
+│   │   ├── HealthCheck
+│   │   ├── ErrorResponse
+│   │   └── SuccessResponse
+│   └── market.py               # Market data models
+│       ├── AssetType (Enum)
+│       ├── MarketStatus (Enum)
+│       ├── Quote
+│       ├── OHLCV
+│       └── HistoricalData
+│
+├── API Routes (routers/)
+│   ├── __init__.py
+│   └── health.py               # Health check endpoints
+│       ├── GET /health
+│       ├── GET /health/cache
+│       └── GET /health/rate-limits
+│
+├── Services (services/)        # External API integrations
+│   └── __init__.py            # (Placeholder for future services)
+│
+├── Utilities (utils/)
+│   ├── __init__.py
+│   ├── cache.py               # TTL-based caching
+│   │   └── CacheManager
+│   │       ├── quotes_cache (60s TTL)
+│   │       ├── historical_cache (1h TTL)
+│   │       └── fundamentals_cache (24h TTL)
+│   ├── rate_limiter.py        # Rate limiting
+│   │   └── RateLimiter
+│   │       ├── can_call()
+│   │       ├── record_call()
+│   │       └── set_rate_limit()
+│   └── logger.py              # Structured logging
+│       └── setup_logging()
+│       └── get_logger()
+│
+├── Documentation
+│   ├── README.md              # Setup and usage guide
+│   ├── ARCHITECTURE.md        # Architecture documentation
+│   ├── API_PROVIDERS.md       # API provider reference
+│   ├── SETUP_SUMMARY.md       # This setup summary
+│   └── DIRECTORY_STRUCTURE.txt # This file
+│
+└── Development Tools
+    ├── run.sh                 # Startup convenience script
+    └── test_imports.py        # Import verification test
+
