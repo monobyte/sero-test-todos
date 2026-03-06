@@ -136,8 +136,13 @@ class TestHealthEndpoints:
         assert data["health"] == "/health"
 
     def test_health_endpoints_cors_headers(self, client: TestClient):
-        """Test that health endpoints include CORS headers."""
-        response = client.get("/health")
+        """Test that health endpoints include CORS headers when Origin is provided."""
+        # CORS middleware only adds Access-Control-Allow-Origin when the
+        # request includes an Origin header that matches allowed_origins.
+        response = client.get(
+            "/health",
+            headers={"Origin": "http://localhost:3000"},
+        )
         
         # CORS headers should be present
         assert "access-control-allow-origin" in response.headers

@@ -17,13 +17,21 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 from config import settings
 from models import ErrorResponse
-from routers import health_router
+from routers import (
+    health_router,
+    historical_router,
+    quotes_router,
+    screener_router,
+    websocket_router,
+)
+from routers.websocket import connection_manager
 from utils import setup_logging, get_logger
 
 # Setup structured logging
@@ -55,7 +63,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     if not settings.coingecko_api_key:
         logger.warning("coingecko_api_key_missing", message="CoinGecko features will be limited")
     
+    # Start WebSocket connection manager (connects upstream Finnhub feed)
+    await connection_manager.startup()
+    
     yield
+    
+    # Shutdown WebSocket connection manager (closes all client connections)
+    await connection_manager.shutdown()
     
     # Shutdown
     logger.info("application_shutting_down")
@@ -93,6 +107,28 @@ logger.info(
 
 
 # Global exception handlers
+def _sanitize_validation_errors(errors: list) -> list:
+    """
+    Sanitize Pydantic validation errors for JSON serialisation.
+
+    Pydantic v2 includes the raw exception object in the ``ctx`` dict
+    (e.g. ``{'error': ValueError('...')}``) which is not JSON-serialisable.
+    Convert any exception values inside ``ctx`` to their string representation.
+    """
+    sanitized = []
+    for err in errors:
+        entry = dict(err)
+        if "ctx" in entry and isinstance(entry["ctx"], dict):
+            entry["ctx"] = {
+                k: str(v) if isinstance(v, Exception) else v
+                for k, v in entry["ctx"].items()
+            }
+        # Remove the documentation URL — not useful in API responses
+        entry.pop("url", None)
+        sanitized.append(entry)
+    return sanitized
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
@@ -107,21 +143,23 @@ async def validation_exception_handler(
     Returns:
         JSON error response
     """
+    sanitized = _sanitize_validation_errors(exc.errors())
+
     logger.warning(
         "validation_error",
         path=request.url.path,
-        errors=exc.errors(),
+        errors=sanitized,
     )
     
     error_response = ErrorResponse(
         error="ValidationError",
         message="Request validation failed",
-        detail={"errors": exc.errors()},
+        detail={"errors": sanitized},
     )
     
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=error_response.model_dump(),
+        content=jsonable_encoder(error_response),
     )
 
 
@@ -152,7 +190,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
     
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=error_response.model_dump(),
+        content=jsonable_encoder(error_response),
     )
 
 
@@ -197,12 +235,10 @@ async def log_requests(request: Request, call_next):
 
 # Include routers
 app.include_router(health_router)
-
-# Future routers will be added here:
-# app.include_router(quotes_router)
-# app.include_router(historical_router)
-# app.include_router(screener_router)
-# app.include_router(websocket_router)
+app.include_router(quotes_router)
+app.include_router(historical_router)
+app.include_router(screener_router)
+app.include_router(websocket_router)
 
 
 @app.get("/", summary="Root endpoint", tags=["Root"])

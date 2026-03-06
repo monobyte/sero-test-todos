@@ -2,9 +2,35 @@
 Service layer for external API integrations.
 Each service module handles a specific data provider with fallback logic.
 """
-# Service modules will be implemented in future subtasks
-# from .finnhub_service import FinnhubService
-# from .coingecko_service import CoinGeckoService
-# from .yfinance_service import YFinanceService
+from .base import (
+    AuthenticationError,
+    BaseService,
+    CacheType,
+    NetworkError,
+    NotFoundError,
+    RateLimitError,
+    ServiceError,
+)
+from .fmp_service import FMPService
+from .yfinance_service import YFinanceService
 
-__all__ = []
+from .coingecko_service import CoinGeckoService, SYMBOL_TO_COINGECKO_ID
+
+# Future services (not yet implemented in this subtask)
+# from .finnhub_service import FinnhubService
+
+__all__ = [
+    # Base
+    "BaseService",
+    "ServiceError",
+    "RateLimitError",
+    "AuthenticationError",
+    "NotFoundError",
+    "NetworkError",
+    "CacheType",
+    # Concrete services
+    "CoinGeckoService",
+    "SYMBOL_TO_COINGECKO_ID",
+    "YFinanceService",
+    "FMPService",
+]

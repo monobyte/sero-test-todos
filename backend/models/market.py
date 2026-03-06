@@ -114,3 +114,40 @@ class HistoricalData(BaseModel):
                 "source": "yfinance",
             }
         }
+
+
+class CompanyProfile(BaseModel):
+    """Company profile and fundamental data from Finnhub."""
+
+    symbol: str = Field(..., description="Ticker symbol")
+    name: str = Field(..., description="Company name")
+    exchange: Optional[str] = Field(None, description="Stock exchange (NASDAQ, NYSE, etc.)")
+    country: Optional[str] = Field(None, description="Country of incorporation")
+    currency: Optional[str] = Field(None, description="Trading currency")
+    industry: Optional[str] = Field(None, description="Industry classification")
+    ipo_date: Optional[str] = Field(None, description="IPO date (YYYY-MM-DD)")
+    market_cap: Optional[float] = Field(None, description="Market capitalisation in millions USD")
+    shares_outstanding: Optional[float] = Field(None, description="Shares outstanding in millions")
+    website: Optional[str] = Field(None, description="Company website URL")
+    logo: Optional[str] = Field(None, description="Company logo URL")
+    phone: Optional[str] = Field(None, description="Company phone number")
+    source: str = Field(..., description="Data source")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "symbol": "AAPL",
+                "name": "Apple Inc",
+                "exchange": "NASDAQ/NMS (Global Select Market)",
+                "country": "US",
+                "currency": "USD",
+                "industry": "Technology",
+                "ipo_date": "1980-12-12",
+                "market_cap": 2800000.0,
+                "shares_outstanding": 15441.88,
+                "website": "https://www.apple.com/",
+                "logo": "https://static.finnhub.io/logo/87cb30d8.png",
+                "phone": "14089961010",
+                "source": "finnhub",
+            }
+        }
