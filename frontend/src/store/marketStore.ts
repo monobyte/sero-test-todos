@@ -69,7 +69,7 @@ export const useMarketStore = create<MarketStore>()(
         // Seed with some defaults so the UI isn't empty on first load
         { symbol: 'AAPL', addedAt: new Date().toISOString(), assetType: 'stock' },
         { symbol: 'GOOGL', addedAt: new Date().toISOString(), assetType: 'stock' },
-        { symbol: 'bitcoin', addedAt: new Date().toISOString(), assetType: 'crypto' },
+        { symbol: 'BTC', addedAt: new Date().toISOString(), assetType: 'crypto' },
       ],
 
       addToWatchlist: (symbol, assetType) => {
@@ -108,6 +108,7 @@ export const useMarketStore = create<MarketStore>()(
     }),
     {
       name: 'market-monitor-store',
+      version: 1,
       // Only persist watchlist and UI prefs — not live quotes or WS state
       partialize: (state) => ({
         watchlist: state.watchlist,
@@ -115,6 +116,21 @@ export const useMarketStore = create<MarketStore>()(
         selectedTimeRange: state.selectedTimeRange,
         activeTab: state.activeTab,
       }),
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as Record<string, unknown>;
+        if (version === 0) {
+          // v0→v1: rename "bitcoin" watchlist entry to "BTC"
+          const watchlist = state.watchlist as WatchlistItem[] | undefined;
+          if (watchlist) {
+            state.watchlist = watchlist.map((w) =>
+              w.symbol.toLowerCase() === 'bitcoin'
+                ? { ...w, symbol: 'BTC', assetType: 'crypto' as AssetType }
+                : w,
+            );
+          }
+        }
+        return state;
+      },
     },
   ),
 );

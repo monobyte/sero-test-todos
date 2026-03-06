@@ -285,11 +285,11 @@ async def _fetch_quote(symbol: str, source: Optional[str]) -> Quote:
         HTTPException: 400 for invalid source, 404 if not found,
                        429 on rate limit, 503 if all sources fail.
     """
-    # Normalise to uppercase first — stock tickers are always uppercase and
-    # CoinGecko tickers (BTC, ETH, …) are stored upper-cased in the lookup table.
-    # This prevents lowercase stock symbols (e.g. "aapl") from being
-    # misidentified as CoinGecko IDs.
-    symbol = symbol.strip().upper()
+    # Check crypto detection BEFORE uppercasing — CoinGecko IDs are lowercase
+    # (e.g. "bitcoin", "ethereum") and would be misidentified after .upper().
+    raw_symbol = symbol.strip()
+    # Normalise to uppercase for stock tickers and lookup-table keys (BTC, ETH, …).
+    symbol = raw_symbol.upper()
 
     if source and source not in VALID_SOURCES:
         raise HTTPException(
@@ -301,7 +301,7 @@ async def _fetch_quote(symbol: str, source: Optional[str]) -> Quote:
             },
         )
 
-    if _is_crypto_symbol(symbol):
+    if _is_crypto_symbol(symbol) or _is_crypto_symbol(raw_symbol):
         logger.info("quote_request_crypto", symbol=symbol, source=source)
         return await _fetch_crypto_quote(symbol, source)
 

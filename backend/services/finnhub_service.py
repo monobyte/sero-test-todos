@@ -564,7 +564,14 @@ class FinnhubWebSocketManager:
     @property
     def is_connected(self) -> bool:
         """Return ``True`` if the WebSocket is currently open."""
-        return self._ws is not None and not self._ws.closed
+        if self._ws is None:
+            return False
+        try:
+            from websockets.protocol import State
+            return self._ws.state is State.OPEN
+        except AttributeError:
+            # Fallback for older websockets versions
+            return not getattr(self._ws, 'closed', True)
 
     @property
     def subscribed_symbols(self) -> Set[str]:
@@ -713,12 +720,17 @@ class FinnhubWebSocketManager:
                 self._logger.debug("websocket_task_cancelled")
                 break
 
-            except websockets.exceptions.InvalidStatusCode as exc:
+            except (
+                websockets.exceptions.InvalidStatus,
+                websockets.exceptions.InvalidStatusCode,  # deprecated alias
+            ) as exc:
                 # 401 = bad API key; no point retrying
-                if exc.status_code == 401:
+                status = getattr(exc, 'response', None)
+                status_code = getattr(status, 'status_code', None) or getattr(exc, 'status_code', None)
+                if status_code == 401:
                     self._logger.error(
                         "websocket_auth_failed",
-                        status_code=exc.status_code,
+                        status_code=status_code,
                     )
                     self._running = False
                     break

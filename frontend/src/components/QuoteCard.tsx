@@ -23,8 +23,8 @@ function formatPrice(price: number): string {
   return price.toFixed(6);
 }
 
-function formatVolume(volume?: number): string {
-  if (volume === undefined) return '—';
+function formatVolume(volume?: number | null): string {
+  if (volume == null) return '—';
   if (volume >= 1e12) return `${(volume / 1e12).toFixed(2)}T`;
   if (volume >= 1e9) return `${(volume / 1e9).toFixed(2)}B`;
   if (volume >= 1e6) return `${(volume / 1e6).toFixed(2)}M`;
@@ -69,8 +69,8 @@ function QuoteCardContent({
   compact: boolean;
 }) {
   const price = liveUpdate?.price ?? quote.price;
-  const change = liveUpdate?.change ?? quote.change;
-  const changePct = liveUpdate?.change_percent ?? quote.change_percent;
+  const change = liveUpdate?.change ?? quote.change ?? 0;
+  const changePct = liveUpdate?.change_percent ?? quote.change_percent ?? 0;
 
   return (
     <>
